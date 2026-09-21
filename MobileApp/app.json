@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "Shopara",
+    "slug": "shopara",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "primaryColor": "#22c55e",
+
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.shopara.app"
+    },
+    "android": {
+      "package": "com.shopara.app",
+      "versionCode": 1,
+      "permissions": [
+        "INTERNET"
+      ],
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff",
+        "foregroundImage": "./assets/android-icon-foreground.png"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "00d00bae-cfb3-4817-b3c9-2e7b8092c69d"
+      }
+    },
+    "plugins": [
+      "expo-font"
+    ]
+  }
+}
