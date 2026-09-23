@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
-const api = import.meta.env.VITE_API_URL;
+const api =
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_SERVER ||
+  "https://shopara-official.onrender.com";
 
 const shuffleProducts = (e) => {
   const shuffled = [...e];

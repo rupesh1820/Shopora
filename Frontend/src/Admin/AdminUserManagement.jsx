@@ -10,7 +10,10 @@ import {
   ShoppingBag,
 } from "lucide-react";
 
-const API_URL = import.meta.env.VITE_SERVER;
+const API_URL =
+  import.meta.env.VITE_SERVER ||
+  import.meta.env.VITE_API_URL ||
+  "https://shopara-official.onrender.com";
 
 const AdminUserManagement = () => {
   const [params, setParams] = useSearchParams();

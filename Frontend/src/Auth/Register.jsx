@@ -2,7 +2,10 @@ import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import axios from "axios";
 
-const API_URL = import.meta.env.VITE_SERVER;
+const API_URL =
+  import.meta.env.VITE_SERVER ||
+  import.meta.env.VITE_API_URL ||
+  "https://shopara-official.onrender.com";
 
 const Register = () => {
   const navigate = useNavigate();

@@ -2,7 +2,10 @@ import { Link, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import { useEffect, useState } from "react";
 
-const API_URL = import.meta.env.VITE_SERVER;
+const API_URL =
+  import.meta.env.VITE_SERVER ||
+  import.meta.env.VITE_API_URL ||
+  "https://shopara-official.onrender.com";
 
 const Products = () => {
   const [products, setProducts] = useState([]);

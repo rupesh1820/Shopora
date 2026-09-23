@@ -2,7 +2,10 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
 
-const API_URL = import.meta.env.VITE_SERVER;
+const API_URL =
+  import.meta.env.VITE_SERVER ||
+  import.meta.env.VITE_API_URL ||
+  "https://shopara-official.onrender.com";
 const Checkout = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
