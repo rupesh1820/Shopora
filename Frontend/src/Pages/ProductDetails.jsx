@@ -108,7 +108,7 @@ const ProductDetails = () => {
   useEffect(() => {
     if (id) getReviews();
   }, [id]);
-
+// ho gya yar
   // ADD / UPDATE REVIEW
   const submitReview = async () => {
     if (!token) {
