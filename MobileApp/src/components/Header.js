@@ -1,14 +1,17 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { COLORS } from "../constants/colors";
 import { useCart } from "../context/CartContext";
 
 const Header = ({ title, showBack = false, onBack, navigation }) => {
+  const insets = useSafeAreaInsets();
   const { cartCount } = useCart();
+  const topPadding = Math.max(insets.top, Platform.OS === "android" ? 16 : 12);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: topPadding, height: 56 + topPadding }]}>
       <View style={styles.leftRow}>
         {showBack && (
           <TouchableOpacity

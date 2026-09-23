@@ -12,8 +12,9 @@ const Wishlist = () => {
   const [params] = useSearchParams();
   const navigate = useNavigate();
 
-  const userId = params.get("user");
-  const token = localStorage.getItem("token");
+const token = localStorage.getItem("token");
+const user = JSON.parse(localStorage.getItem("user") || "{}");
+const userId = user._id || user.id;
 
   const [wishlist, setWishlist] = useState([]);
   const [loading, setLoading] = useState(true);

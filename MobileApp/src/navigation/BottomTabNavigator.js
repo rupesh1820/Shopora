@@ -1,6 +1,8 @@
 import React from "react";
+import { Platform } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Feather, Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { COLORS } from "../constants/colors";
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
@@ -16,6 +18,8 @@ const Tab = createBottomTabNavigator();
 const BottomTabNavigator = () => {
   const { cartCount } = useCart();
   const { wishlistCount } = useWishlist();
+  const insets = useSafeAreaInsets();
+  const bottomPadding = Math.max(insets.bottom, Platform.OS === "android" ? 10 : 8);
 
   return (
     <Tab.Navigator
@@ -24,8 +28,8 @@ const BottomTabNavigator = () => {
         tabBarActiveTintColor: COLORS.primary,
         tabBarInactiveTintColor: COLORS.textMuted,
         tabBarStyle: {
-          height: 60,
-          paddingBottom: 8,
+          height: 56 + bottomPadding,
+          paddingBottom: bottomPadding,
           paddingTop: 8,
           backgroundColor: COLORS.card,
           borderTopWidth: 1,

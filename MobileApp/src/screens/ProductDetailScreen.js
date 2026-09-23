@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { COLORS } from "../constants/colors";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Header from "../components/Header";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { getProductById } from "../api/products";
@@ -20,6 +21,8 @@ import { useWishlist } from "../context/WishlistContext";
 const { width } = Dimensions.get("window");
 
 const ProductDetailScreen = ({ route, navigation }) => {
+  const insets = useSafeAreaInsets();
+  const bottomPadding = Math.max(insets.bottom, 14);
   const { productId } = route.params;
 
   const [product, setProduct] = useState(null);
@@ -105,7 +108,13 @@ const ProductDetailScreen = ({ route, navigation }) => {
     <View style={styles.container}>
       <Header title="Product Details" showBack={true} navigation={navigation} />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: 80 + bottomPadding },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         {/* IMAGE CAROUSEL */}
         <View style={styles.imageContainer}>
           <ScrollView
@@ -290,7 +299,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
       </ScrollView>
 
       {/* STICKY BOTTOM ACTIONS */}
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, { paddingBottom: bottomPadding }]}>
         <TouchableOpacity
           style={styles.cartBtn}
           activeOpacity={0.8}

@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { COLORS } from "../constants/colors";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Header from "../components/Header";
 import ProductCard from "../components/ProductCard";
 import CategoryChip from "../components/CategoryChip";
@@ -31,6 +32,7 @@ const CATEGORIES = [
 ];
 
 const HomeScreen = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [selectedCat, setSelectedCat] = useState("All");
@@ -169,9 +171,29 @@ const HomeScreen = ({ navigation }) => {
         keyExtractor={(item) => item._id}
         numColumns={2}
         ListHeaderComponent={renderHeader}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[
+          styles.listContent,
+          { paddingBottom: 40 + insets.bottom },
+        ]}
         columnWrapperStyle={styles.columnWrapper}
         showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
+          !loading && (
+            <View style={styles.emptyContainer}>
+              <Feather name="shopping-bag" size={48} color={COLORS.textLight} />
+              <Text style={styles.emptyTitle}>No products found</Text>
+              <Text style={styles.emptySubtitle}>
+                Swipe down to refresh or check your internet connection
+              </Text>
+              <TouchableOpacity
+                style={styles.retryBtn}
+                onPress={fetchProductList}
+              >
+                <Text style={styles.retryBtnText}>Reload Products</Text>
+              </TouchableOpacity>
+            </View>
+          )
+        }
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -305,6 +327,36 @@ const styles = StyleSheet.create({
     width: 1,
     height: 16,
     backgroundColor: COLORS.border,
+  },
+  emptyContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 48,
+    paddingHorizontal: 24,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: COLORS.dark,
+    marginTop: 12,
+  },
+  emptySubtitle: {
+    fontSize: 13,
+    color: COLORS.textMuted,
+    textAlign: "center",
+    marginTop: 6,
+    marginBottom: 16,
+  },
+  retryBtn: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
+  retryBtnText: {
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: "700",
   },
 });
 

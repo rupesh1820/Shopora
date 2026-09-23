@@ -9,6 +9,7 @@ import {
   Alert,
 } from "react-native";
 import { Feather, Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { COLORS } from "../constants/colors";
 import Header from "../components/Header";
 import { useCart } from "../context/CartContext";
@@ -16,6 +17,8 @@ import { useAuth } from "../context/AuthContext";
 import { createOrder } from "../api/orders";
 
 const CheckoutScreen = ({ route, navigation }) => {
+  const insets = useSafeAreaInsets();
+  const bottomPadding = Math.max(insets.bottom, 14);
   const { total = 0, subtotal = 0, discount = 0, deliveryFee = 0, coupon = null } =
     route.params || {};
   const { cartItems, clearCart } = useCart();
@@ -102,7 +105,13 @@ const CheckoutScreen = ({ route, navigation }) => {
     <View style={styles.container}>
       <Header title="Checkout" showBack={true} navigation={navigation} />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: 90 + bottomPadding },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         {/* SHIPPING ADDRESS SECTION */}
         <View style={styles.sectionCard}>
           <View style={styles.sectionHeader}>

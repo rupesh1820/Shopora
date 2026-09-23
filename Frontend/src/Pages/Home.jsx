@@ -9,10 +9,19 @@ import {
   ShoppingBag,
 } from "lucide-react";
 
-const API_URL =
-  import.meta.env.VITE_SERVER ||
-  import.meta.env.VITE_API_URL ||
-  "https://shopara-official.onrender.com";
+const API_URL = (() => {
+  const env = import.meta.env.VITE_SERVER || import.meta.env.VITE_API_URL;
+  if (
+    !env ||
+    env === "undefined" ||
+    env.includes("localhost") ||
+    env.includes("127.0.0.1") ||
+    env.includes("10.")
+  ) {
+    return "https://shopara-official.onrender.com";
+  }
+  return env.replace(/\/+$/, "");
+})();
 
 const categories = [
   {
