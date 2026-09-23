@@ -40,7 +40,6 @@ export const getCart = async (req, res) => {
 export const addToCart = async (req, res) => {
   try {
     const { userId } = req.params;
-
     const {
       productId,
       quantity,
@@ -48,8 +47,16 @@ export const addToCart = async (req, res) => {
       selectedColor,
     } = req.body;
 
-    // Check user ownership
-    if (req.user.userId.toString() !== userId) {
+    // Admin ko cart use nahi karne dena
+    if (req.user.role === "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Admin cannot add products to cart",
+      });
+    }
+
+    // User ownership check
+    if (req.user.userId?.toString() !== userId) {
       return res.status(403).json({
         success: false,
         message: "You can only access your own cart",
@@ -72,9 +79,14 @@ export const addToCart = async (req, res) => {
       });
     }
 
+    // Old cart document me products missing ho sakta hai
+    if (!Array.isArray(cart.products)) {
+      cart.products = [];
+    }
+
     const existingItem = cart.products.find(
       (item) =>
-        item.productId.toString() === productId &&
+        item.productId?.toString() === productId &&
         item.selectedSize === selectedSize &&
         item.selectedColor === selectedColor
     );
@@ -103,7 +115,7 @@ export const addToCart = async (req, res) => {
 
     res.status(500).json({
       success: false,
-      message: "Failed to add product to cart",
+      message: error.message || "Failed to add product to cart",
     });
   }
 };

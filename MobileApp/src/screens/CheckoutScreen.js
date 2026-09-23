@@ -251,7 +251,7 @@ const CheckoutScreen = ({ route, navigation }) => {
       </ScrollView>
 
       {/* PLACE ORDER BUTTON */}
-      <View style={styles.footerBar}>
+      <View style={[styles.footerBar, { paddingBottom: bottomPadding }]}>
         <View>
           <Text style={styles.footerTotalLabel}>Total</Text>
           <Text style={styles.footerTotalVal}>₹{total}</Text>

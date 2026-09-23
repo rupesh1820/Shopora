@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import axios from "axios";
+
 import {
   Heart,
   ShoppingBag,
@@ -25,6 +26,12 @@ const ProductDetails = () => {
   const [product, setProduct] = useState(null);
   const [recommended, setRecommended] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const [cartLoading, setCartLoading] = useState(false);
+  const [wishLoading, setWishLoading] = useState(false);
+  const [buyLoading, setBuyLoading] = useState(false);
+
+  const [wishlisted, setWishlisted] = useState(false);
 
   const [size, setSize] = useState("");
   const [color, setColor] = useState("");
@@ -52,16 +59,25 @@ const ProductDetails = () => {
     const getProduct = async () => {
       try {
         setLoading(true);
+        setError("");
 
-        const res = await axios.get(`${API_URL}/api/products/${id}`);
+        const res = await axios.get(
+          `${API_URL}/api/products/${id}`
+        );
 
-        const e = res.data.product || res.data.data || res.data;
+        const e =
+          res.data.product ||
+          res.data.data ||
+          res.data;
 
         setProduct(e);
+
         setSize(e.sizes?.[0] || "");
         setColor(e.colors?.[0] || "");
 
-        const all = await axios.get(`${API_URL}/api/products`);
+        const all = await axios.get(
+          `${API_URL}/api/products`
+        );
 
         const data =
           all.data.products ||
@@ -82,8 +98,10 @@ const ProductDetails = () => {
         );
       } catch (err) {
         console.log("Product error:", err);
+
         setError(
-          err.response?.data?.message || "Unable to load product"
+          err.response?.data?.message ||
+            "Unable to load product"
         );
       } finally {
         setLoading(false);
@@ -111,7 +129,7 @@ const ProductDetails = () => {
   useEffect(() => {
     if (id) getReviews();
   }, [id]);
-// ho gya yar
+
   // ADD / UPDATE REVIEW
   const submitReview = async () => {
     if (!token) {
@@ -204,13 +222,18 @@ const ProductDetails = () => {
       return;
     }
 
+    if (!userId) {
+      setError("User information not found. Please login again.");
+      return;
+    }
+
     if (!size || !color) {
       setError("Please select size and color");
       return;
     }
 
     try {
-      setLoading(true);
+      setCartLoading(true);
       setError("");
 
       await axios.post(
@@ -226,12 +249,14 @@ const ProductDetails = () => {
 
       navigate(`/cart?user=${userId}`);
     } catch (err) {
+      console.log("Add cart error:", err);
+
       setError(
         err.response?.data?.message ||
           "Unable to add product to cart"
       );
     } finally {
-      setLoading(false);
+      setCartLoading(false);
     }
   };
 
@@ -242,8 +267,13 @@ const ProductDetails = () => {
       return;
     }
 
+    if (!userId) {
+      setError("User information not found. Please login again.");
+      return;
+    }
+
     try {
-      setLoading(true);
+      setWishLoading(true);
       setError("");
 
       await axios.post(
@@ -254,14 +284,17 @@ const ProductDetails = () => {
         config
       );
 
+      setWishlisted(true);
       setError("Added to wishlist");
     } catch (err) {
+      console.log("Wishlist error:", err);
+
       setError(
         err.response?.data?.message ||
           "Unable to add to wishlist"
       );
     } finally {
-      setLoading(false);
+      setWishLoading(false);
     }
   };
 
@@ -272,13 +305,18 @@ const ProductDetails = () => {
       return;
     }
 
+    if (!userId) {
+      setError("User information not found. Please login again.");
+      return;
+    }
+
     if (!size || !color) {
       setError("Please select size and color");
       return;
     }
 
     try {
-      setLoading(true);
+      setBuyLoading(true);
       setError("");
 
       await axios.post(
@@ -294,15 +332,18 @@ const ProductDetails = () => {
 
       navigate(`/checkout?user=${userId}`);
     } catch (err) {
+      console.log("Buy now error:", err);
+
       setError(
         err.response?.data?.message ||
           "Unable to continue to checkout"
       );
     } finally {
-      setLoading(false);
+      setBuyLoading(false);
     }
   };
 
+  // PRODUCT LOADING
   if (loading && !product) {
     return (
       <p className="p-10 text-center">
@@ -409,7 +450,8 @@ const ProductDetails = () => {
             </div>
 
             <span className="text-sm text-gray-500">
-              {product.rating || 0} ({product.reviews || 0} reviews)
+              {product.rating || 0} (
+              {product.reviews || 0} reviews)
             </span>
           </div>
 
@@ -509,7 +551,9 @@ const ProductDetails = () => {
 
               <button
                 disabled={qty >= product.stock}
-                onClick={() => setQty((q) => q + 1)}
+                onClick={() =>
+                  setQty((q) => q + 1)
+                }
                 className="p-2 disabled:opacity-30"
               >
                 <Plus size={16} />
@@ -526,30 +570,59 @@ const ProductDetails = () => {
 
           {/* ACTIONS */}
           <div className="mt-8 flex gap-2 sm:gap-3">
+
+            {/* ADD TO CART */}
             <button
-              disabled={loading || product.stock <= 0}
+              disabled={
+                cartLoading ||
+                buyLoading ||
+                product.stock <= 0
+              }
               onClick={addToCart}
               className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-green-500 py-3 font-semibold text-white hover:bg-green-600 disabled:opacity-50"
             >
               <ShoppingBag size={19} />
-              {loading ? "Adding..." : "Add To Cart"}
+
+              {cartLoading
+                ? "Adding..."
+                : "Add To Cart"}
             </button>
 
+            {/* WISHLIST */}
             <button
-              disabled={loading}
+              disabled={wishLoading}
               onClick={addWishlist}
               className="rounded-xl border px-4 hover:bg-gray-100 disabled:opacity-50"
             >
-              <Heart size={21} />
+              <Heart
+                size={21}
+                fill={
+                  wishlisted
+                    ? "currentColor"
+                    : "none"
+                }
+                className={
+                  wishlisted
+                    ? "text-red-500"
+                    : ""
+                }
+              />
             </button>
           </div>
 
+          {/* BUY NOW */}
           <button
-            disabled={loading || product.stock <= 0}
+            disabled={
+              buyLoading ||
+              cartLoading ||
+              product.stock <= 0
+            }
             onClick={buyNow}
             className="mt-3 w-full rounded-xl bg-slate-900 py-3 font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
           >
-            {loading ? "Please wait..." : "Buy Now"}
+            {buyLoading
+              ? "Please wait..."
+              : "Buy Now"}
           </button>
         </div>
       </div>
@@ -600,7 +673,9 @@ const ProductDetails = () => {
 
           <textarea
             value={comment}
-            onChange={(e) => setComment(e.target.value)}
+            onChange={(e) =>
+              setComment(e.target.value)
+            }
             placeholder="Write your review..."
             rows={4}
             className="mt-4 w-full rounded-lg border p-3 outline-none focus:border-black"
@@ -658,24 +733,28 @@ const ProductDetails = () => {
                       </p>
 
                       <div className="mt-1 flex text-yellow-400">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Star
-                            key={star}
-                            size={15}
-                            fill={
-                              star <= e.rating
-                                ? "currentColor"
-                                : "none"
-                            }
-                          />
-                        ))}
+                        {[1, 2, 3, 4, 5].map(
+                          (star) => (
+                            <Star
+                              key={star}
+                              size={15}
+                              fill={
+                                star <= e.rating
+                                  ? "currentColor"
+                                  : "none"
+                              }
+                            />
+                          )
+                        )}
                       </div>
                     </div>
 
                     {own && (
                       <div className="flex gap-3 text-sm">
                         <button
-                          onClick={() => editReview(e)}
+                          onClick={() =>
+                            editReview(e)
+                          }
                           className="underline"
                         >
                           Edit
