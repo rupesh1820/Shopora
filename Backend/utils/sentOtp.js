@@ -65,4 +65,5 @@ const sentOtp = async (email, otp) => {
   }
 };
 
+// done
 export default sentOtp;
