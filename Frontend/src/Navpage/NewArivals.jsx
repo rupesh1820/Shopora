@@ -1,198 +1,242 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 
-const api =
+const API_URL =
   import.meta.env.VITE_API_URL ||
   import.meta.env.VITE_SERVER ||
   "https://shopara-official.onrender.com";
 
-const NewArrivals = () => {
-  const [products, setProducts] = useState([]);
+const Products = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
 
+  const [products, setProducts] = useState([]);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  const category = searchParams.get("category") || "";
+
+  // ================= GET PRODUCTS =================
   useEffect(() => {
     const getProducts = async () => {
       try {
-        const res = await fetch(`${api}/api/products`);
+        setLoading(true);
+
+        const res = await fetch(`${API_URL}/api/products`);
         const data = await res.json();
 
-        setProducts(data.products || data);
+        console.log("PRODUCT API RESPONSE:", data);
+
+        const list =
+          data?.products ||
+          data?.Products ||
+          data?.data ||
+          data;
+
+        setProducts(Array.isArray(list) ? list : []);
       } catch (error) {
-        console.log("Products fetch error:", error);
+        console.error("Products fetch error:", error);
+        setProducts([]);
+      } finally {
+        setLoading(false);
       }
     };
 
     getProducts();
   }, []);
 
-  const newProducts = [...products]
-    .slice(-8)
-    .reverse();
+  // ================= FILTER =================
+  const filteredProducts = useMemo(() => {
+    let result = [...products];
 
-  const categories = [
-    {
-      name: "Men",
-      link: "/products?gender=Men",
-    },
-    {
-      name: "Women",
-      link: "/products?gender=Women",
-    },
-    {
-      name: "Kids",
-      link: "/products?gender=Kids",
-    },
-  ];
+    // Search
+    if (search.trim()) {
+      const value = search.toLowerCase();
+
+      result = result.filter((product) =>
+        (
+          product?.title ||
+          product?.name ||
+          ""
+        )
+          .toLowerCase()
+          .includes(value)
+      );
+    }
+
+    // NEW ARRIVALS
+    // "new" ko actual category mat samjho
+    if (category.toLowerCase() === "new") {
+      result = [...result].reverse().slice(0, 8);
+    }
+
+    // NORMAL CATEGORY
+    else if (category) {
+      const selectedCategory = category.toLowerCase();
+
+      result = result.filter((product) => {
+        const productCategory = (
+          product?.category ||
+          product?.gender ||
+          ""
+        ).toLowerCase();
+
+        return productCategory === selectedCategory;
+      });
+    }
+
+    return result;
+  }, [products, search, category]);
+
+  // ================= REMOVE CATEGORY =================
+  const removeCategory = () => {
+    const params = new URLSearchParams(searchParams);
+    params.delete("category");
+
+    setSearchParams(params);
+  };
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-white">
 
-      {/* Hero */}
-      <section className="rounded-3xl bg-slate-900 px-6 py-14 text-white sm:px-10">
+      {/* ================= HEADER ================= */}
+      <div className="px-4 md:px-8 pt-10">
 
-        <p className="text-sm uppercase tracking-widest text-green-400">
-          Shopora
-        </p>
-
-        <h1 className="mt-3 text-4xl font-bold sm:text-5xl">
-          New Arrivals
+        <h1 className="text-4xl font-semibold">
+          {category.toLowerCase() === "new"
+            ? "New"
+            : category
+            ? category.charAt(0).toUpperCase() + category.slice(1)
+            : "All Products"}
         </h1>
 
-        <p className="mt-4 max-w-xl text-gray-300">
-          Discover the latest styles and fresh looks added to Shopora.
+        <p className="text-gray-500 mt-2">
+          {filteredProducts.length} products found
         </p>
 
-        <Link
-          to="/products?new=true"
-          className="mt-7 inline-block rounded-xl bg-green-500 px-6 py-3 font-semibold hover:bg-green-600"
-        >
-          Shop New Arrivals
-        </Link>
-
-      </section>
-
-      {/* Categories */}
-      <section className="mt-12">
-
-        <h2 className="text-2xl font-bold">
-          Explore New Styles
-        </h2>
-
-        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-
-          {categories.map((e) => (
-            <Link
-              key={e.name}
-              to={e.link}
-              className="rounded-2xl border bg-gray-50 p-6 text-center transition hover:border-green-500 hover:bg-green-50"
-            >
-              <h3 className="text-xl font-bold">
-                {e.name}
-              </h3>
-
-              <p className="mt-1 text-sm text-gray-500">
-                Explore latest {e.name.toLowerCase()} styles
-              </p>
-            </Link>
-          ))}
-
+        {/* ================= SEARCH ================= */}
+        <div className="mt-8">
+          <input
+            type="text"
+            placeholder="Search clothes..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full border border-black rounded-2xl px-5 py-4 outline-none text-lg"
+          />
         </div>
 
-      </section>
+        {/* ================= CATEGORY CHIP ================= */}
+        {category && (
+          <div className="mt-6 inline-flex items-center gap-2 bg-gray-100 px-5 py-3 rounded-full">
+            <span>
+              Category: {category}
+            </span>
 
-      {/* Products */}
-      <section className="mt-14">
+            <button
+              onClick={removeCategory}
+              className="text-gray-600 hover:text-black"
+            >
+              ×
+            </button>
+          </div>
+        )}
+      </div>
 
-        <div className="flex items-center justify-between">
+      {/* ================= PRODUCTS ================= */}
+      <div className="px-4 md:px-8 py-10">
 
-          <div>
-            <h2 className="text-2xl font-bold">
-              Just Arrived
+        {loading ? (
+          <div className="text-center py-20 text-gray-500">
+            Loading products...
+          </div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="text-center py-20">
+            <h2 className="text-2xl font-medium">
+              No products found
             </h2>
 
-            <p className="mt-1 text-sm text-gray-500">
-              Fresh styles you might love
+            <p className="text-gray-500 mt-2">
+              Try another search or category.
             </p>
           </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 md:gap-7">
 
-          <Link
-            to="/products?new=true"
-            className="text-sm font-semibold text-green-600"
-          >
-            View All
-          </Link>
+            {filteredProducts.map((product) => {
+              const productId = product?._id;
 
-        </div>
+              const title =
+                product?.title ||
+                product?.name ||
+                "Product";
 
-        {newProducts.length > 0 ? (
-          <div className="mt-7 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+              const image =
+                product?.images?.[0] ||
+                product?.image ||
+                product?.imageUrl ||
+                "";
 
-            {newProducts.map((e) => (
-              <Link
-                key={e._id}
-                to={`/product?id=${e._id}`}
-                className="group overflow-hidden rounded-2xl border bg-white"
-              >
+              const price = Number(product?.price) || 0;
 
-                <div className="overflow-hidden">
+              const oldPrice =
+                Number(product?.oldPrice) || 0;
 
-                  <img
-                    src={e.images?.[0]}
-                    alt={e.name}
-                    className="h-64 w-full object-cover transition duration-300 group-hover:scale-105"
-                  />
+              return (
+                <Link
+                  key={productId}
+                  to={`/product?id=${productId}`}
+                  className="group"
+                >
 
-                </div>
+                  {/* IMAGE */}
+                  <div className="w-full aspect-[3/4] bg-gray-100 rounded-xl overflow-hidden">
 
-                <div className="p-4">
-
-                  <span className="rounded bg-green-100 px-2 py-1 text-xs font-semibold text-green-600">
-                    NEW
-                  </span>
-
-                  <h3 className="mt-3 line-clamp-1 font-semibold">
-                    {e.name}
-                  </h3>
-
-                  <div className="mt-2 flex items-center gap-2">
-
-                    <span className="font-bold">
-                      ₹{e.price}
-                    </span>
-
-                    {e.oldPrice && (
-                      <span className="text-sm text-gray-400 line-through">
-                        ₹{e.oldPrice}
-                      </span>
+                    {image ? (
+                      <img
+                        src={image}
+                        alt={title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-400">
+                        No Image
+                      </div>
                     )}
 
                   </div>
 
-                  <p className="mt-1 text-sm text-yellow-500">
-                    ★ {e.rating}
-                  </p>
+                  {/* INFO */}
+                  <div className="mt-3">
 
-                </div>
+                    <h3 className="font-medium truncate">
+                      {title}
+                    </h3>
 
-              </Link>
-            ))}
+                    <div className="flex items-center gap-2 mt-1">
 
-          </div>
-        ) : (
-          <div className="mt-8 rounded-2xl border py-16 text-center">
-            <h2 className="text-xl font-bold">
-              No New Arrivals
-            </h2>
+                      <span className="font-semibold">
+                        ₹{price}
+                      </span>
 
-            <p className="mt-2 text-gray-500">
-              New products will appear here.
-            </p>
+                      {oldPrice > price && (
+                        <span className="text-gray-400 line-through text-sm">
+                          ₹{oldPrice}
+                        </span>
+                      )}
+
+                    </div>
+
+                  </div>
+
+                </Link>
+              );
+            })}
+
           </div>
         )}
+      </div>
 
-      </section>
-
-    </main>
+    </div>
   );
 };
 
-export default NewArrivals;
+export default Products;

@@ -65,7 +65,7 @@ const Profile = () => {
     return null;
   }
 
-  const userId = savedUser._id;
+  const userId = savedUser?.id;
 
   const config = {
     headers: {

@@ -1,12 +1,12 @@
 import Cart from "../Model/Cart.js";
 
-// Get user's cart
+// ================= GET CART =================
+
 export const getCart = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    // Check user ownership
-    if (req.user.userId.toString() !== userId) {
+    if (req.user.userId?.toString() !== userId) {
       return res.status(403).json({
         success: false,
         message: "You can only access your own cart",
@@ -22,24 +22,37 @@ export const getCart = async (req, res) => {
       });
     }
 
-    res.status(200).json({
+    // IMPORTANT: Product data populate
+    await cart.populate({
+      path: "products.productId",
+    });
+
+    console.log(
+      "CART RESPONSE:",
+      JSON.stringify(cart, null, 2)
+    );
+
+    return res.status(200).json({
       success: true,
       cart,
     });
   } catch (error) {
     console.error("Get cart error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: "Failed to fetch cart",
+      message: error.message || "Failed to fetch cart",
     });
   }
 };
 
-// Add product to cart
+
+// ================= ADD TO CART =================
+
 export const addToCart = async (req, res) => {
   try {
     const { userId } = req.params;
+
     const {
       productId,
       quantity,
@@ -47,7 +60,6 @@ export const addToCart = async (req, res) => {
       selectedColor,
     } = req.body;
 
-    // Admin ko cart use nahi karne dena
     if (req.user.role === "admin") {
       return res.status(403).json({
         success: false,
@@ -55,7 +67,6 @@ export const addToCart = async (req, res) => {
       });
     }
 
-    // User ownership check
     if (req.user.userId?.toString() !== userId) {
       return res.status(403).json({
         success: false,
@@ -79,11 +90,6 @@ export const addToCart = async (req, res) => {
       });
     }
 
-    // Old cart document me products missing ho sakta hai
-    if (!Array.isArray(cart.products)) {
-      cart.products = [];
-    }
-
     const existingItem = cart.products.find(
       (item) =>
         item.productId?.toString() === productId &&
@@ -103,9 +109,10 @@ export const addToCart = async (req, res) => {
     }
 
     await cart.save();
+
     await cart.populate("products.productId");
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Product added to cart",
       cart,
@@ -113,14 +120,16 @@ export const addToCart = async (req, res) => {
   } catch (error) {
     console.error("Add to cart error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message || "Failed to add product to cart",
     });
   }
 };
 
-// Update cart item quantity
+
+// ================= UPDATE QUANTITY =================
+
 export const updateCartItem = async (req, res) => {
   try {
     const { userId, productId } = req.params;
@@ -131,15 +140,14 @@ export const updateCartItem = async (req, res) => {
       selectedColor,
     } = req.body;
 
-    // Check user ownership
-    if (req.user.userId.toString() !== userId) {
+    if (req.user.userId?.toString() !== userId) {
       return res.status(403).json({
         success: false,
         message: "You can only access your own cart",
       });
     }
 
-    if (!quantity || quantity < 1) {
+    if (!quantity || Number(quantity) < 1) {
       return res.status(400).json({
         success: false,
         message: "Valid quantity is required",
@@ -157,7 +165,7 @@ export const updateCartItem = async (req, res) => {
 
     const item = cart.products.find(
       (item) =>
-        item.productId.toString() === productId &&
+        item.productId?.toString() === productId &&
         item.selectedSize === selectedSize &&
         item.selectedColor === selectedColor
     );
@@ -172,9 +180,10 @@ export const updateCartItem = async (req, res) => {
     item.quantity = Number(quantity);
 
     await cart.save();
+
     await cart.populate("products.productId");
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Cart updated successfully",
       cart,
@@ -182,14 +191,16 @@ export const updateCartItem = async (req, res) => {
   } catch (error) {
     console.error("Update cart error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: "Failed to update cart",
+      message: error.message || "Failed to update cart",
     });
   }
 };
 
-// Remove cart item
+
+// ================= REMOVE ITEM =================
+
 export const removeCartItem = async (req, res) => {
   try {
     const { userId, productId } = req.params;
@@ -199,8 +210,7 @@ export const removeCartItem = async (req, res) => {
       selectedColor,
     } = req.body;
 
-    // Check user ownership
-    if (req.user.userId.toString() !== userId) {
+    if (req.user.userId?.toString() !== userId) {
       return res.status(403).json({
         success: false,
         message: "You can only access your own cart",
@@ -221,7 +231,7 @@ export const removeCartItem = async (req, res) => {
     cart.products = cart.products.filter(
       (item) =>
         !(
-          item.productId.toString() === productId &&
+          item.productId?.toString() === productId &&
           item.selectedSize === selectedSize &&
           item.selectedColor === selectedColor
         )
@@ -235,9 +245,10 @@ export const removeCartItem = async (req, res) => {
     }
 
     await cart.save();
+
     await cart.populate("products.productId");
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Product removed from cart",
       cart,
@@ -245,20 +256,21 @@ export const removeCartItem = async (req, res) => {
   } catch (error) {
     console.error("Remove cart item error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: "Failed to remove cart item",
+      message: error.message || "Failed to remove cart item",
     });
   }
 };
 
-// Clear cart
+
+// ================= CLEAR CART =================
+
 export const clearCart = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    // Check user ownership
-    if (req.user.userId.toString() !== userId) {
+    if (req.user.userId?.toString() !== userId) {
       return res.status(403).json({
         success: false,
         message: "You can only access your own cart",
@@ -278,7 +290,7 @@ export const clearCart = async (req, res) => {
 
     await cart.save();
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Cart cleared successfully",
       cart,
@@ -286,9 +298,9 @@ export const clearCart = async (req, res) => {
   } catch (error) {
     console.error("Clear cart error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: "Failed to clear cart",
+      message: error.message || "Failed to clear cart",
     });
   }
 };

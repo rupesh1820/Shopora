@@ -1,0 +1,6 @@
+*.apk
+*.aab
+node_modules
+.git
+.expo
+.expo-shared

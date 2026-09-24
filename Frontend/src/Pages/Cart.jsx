@@ -1,4 +1,4 @@
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Minus,
   Plus,
@@ -15,11 +15,18 @@ const API_URL =
   "https://shopara-official.onrender.com";
 
 const Cart = () => {
-  const [params] = useSearchParams();
   const navigate = useNavigate();
 
-  const userId = params.get("user");
   const token = localStorage.getItem("token");
+
+  const savedUser = JSON.parse(
+    localStorage.getItem("user") || "{}"
+  );
+
+  const userId =
+    savedUser?._id ||
+    savedUser?.id ||
+    savedUser?.userId;
 
   const [cart, setCart] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -31,23 +38,57 @@ const Cart = () => {
     },
   };
 
-  // GET CART
+  // ================= GET CART =================
+
   const getCart = async () => {
     try {
+      setLoading(true);
+
+      if (!userId) {
+        navigate("/login");
+        return;
+      }
+
       const res = await axios.get(
         `${API_URL}/api/cart/${userId}`,
         config
       );
 
-      const e = res.data.cart || res.data.data || res.data;
+      console.log("CART RESPONSE:", res.data);
 
-      setCart(e?.products || []);
+      const data =
+        res.data?.cart ||
+        res.data?.data ||
+        res.data;
+
+      const products = data?.products || [];
+
+      console.log("CART PRODUCTS:", products);
+
+      setCart(
+        Array.isArray(products)
+          ? products
+          : []
+      );
     } catch (error) {
-      console.log("Cart error:", error);
+      console.error(
+        "Cart error:",
+        error.response?.data || error
+      );
+
+      if (
+        error.response?.status === 401 ||
+        error.response?.status === 403
+      ) {
+        localStorage.removeItem("token");
+        navigate("/login");
+      }
     } finally {
       setLoading(false);
     }
   };
+
+  // ================= LOAD =================
 
   useEffect(() => {
     if (!token || !userId) {
@@ -58,44 +99,67 @@ const Cart = () => {
     getCart();
   }, [userId]);
 
-  // UPDATE QUANTITY
-  const updateQnty = async (e, value) => {
-    const qty = e.quantity + value;
+  // ================= UPDATE QUANTITY =================
+
+  const updateQnty = async (item, value) => {
+    const qty =
+      Number(item.quantity) + value;
 
     if (qty < 1) return;
 
+    if (
+      item.productId?.stock !== undefined &&
+      qty > Number(item.productId.stock)
+    ) {
+      return;
+    }
+
     try {
       await axios.put(
-        `${API_URL}/api/cart/${userId}/update/${e.productId._id}`,
+        `${API_URL}/api/cart/${userId}/update/${item.productId._id}`,
         {
           quantity: qty,
-          selectedSize: e.selectedSize,
-          selectedColor: e.selectedColor,
+          selectedSize: item.selectedSize,
+          selectedColor: item.selectedColor,
         },
         config
       );
 
-      getCart();
+      await getCart();
     } catch (error) {
-      console.log("Update cart error:", error);
+      console.error(
+        "Update cart error:",
+        error.response?.data || error
+      );
     }
   };
 
-  // REMOVE ITEM
-  const removeItem = async (e) => {
+  // ================= REMOVE ITEM =================
+
+  const removeItem = async (item) => {
     try {
       await axios.delete(
-        `${API_URL}/api/cart/${userId}/remove/${e.productId._id}`,
-        config
+        `${API_URL}/api/cart/${userId}/remove/${item.productId._id}`,
+        {
+          ...config,
+          data: {
+            selectedSize: item.selectedSize,
+            selectedColor: item.selectedColor,
+          },
+        }
       );
 
-      getCart();
+      await getCart();
     } catch (error) {
-      console.log("Remove cart error:", error);
+      console.error(
+        "Remove cart error:",
+        error.response?.data || error
+      );
     }
   };
 
-  // CLEAR CART
+  // ================= CLEAR CART =================
+
   const clearCart = async () => {
     try {
       await axios.delete(
@@ -105,18 +169,35 @@ const Cart = () => {
 
       setCart([]);
     } catch (error) {
-      console.log("Clear cart error:", error);
+      console.error(
+        "Clear cart error:",
+        error.response?.data || error
+      );
     }
   };
 
+  // ================= TOTAL =================
+
   const subtotal = cart.reduce(
-    (total, e) =>
-      total + e.productId.price * e.quantity,
+    (total, item) => {
+      const price =
+        Number(item.productId?.price) || 0;
+
+      const quantity =
+        Number(item.quantity) || 0;
+
+      return total + price * quantity;
+    },
     0
   );
 
-  const delivery = subtotal > 999 ? 0 : 99;
-  const total = subtotal + delivery;
+  const delivery =
+    subtotal >= 999 ? 0 : 99;
+
+  const total =
+    subtotal + delivery;
+
+  // ================= LOADING =================
 
   if (loading) {
     return (
@@ -125,6 +206,8 @@ const Cart = () => {
       </p>
     );
   }
+
+  // ================= EMPTY CART =================
 
   if (!cart.length) {
     return (
@@ -152,10 +235,13 @@ const Cart = () => {
     );
   }
 
+  // ================= CART =================
+
   return (
     <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
 
       {/* HEADER */}
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">
@@ -163,7 +249,11 @@ const Cart = () => {
           </h1>
 
           <p className="mt-2 text-gray-500">
-            {cart.length} items in your cart
+            {cart.length}{" "}
+            {cart.length === 1
+              ? "item"
+              : "items"}{" "}
+            in your cart
           </p>
         </div>
 
@@ -178,102 +268,168 @@ const Cart = () => {
       <div className="mt-8 grid gap-8 lg:grid-cols-3">
 
         {/* CART ITEMS */}
+
         <div className="space-y-4 lg:col-span-2">
 
-          {cart.map((e) => (
-            <div
-              key={`${e.productId._id}-${e.selectedSize}-${e.selectedColor}`}
-              className="flex gap-4 rounded-2xl border bg-white p-4"
-            >
+          {cart.map((item, index) => {
+            const product =
+              item.productId;
 
-              {/* IMAGE */}
-              <Link
-                to={`/product?id=${e.productId._id}`}
+            const price =
+              Number(product?.price) || 0;
+
+            const quantity =
+              Number(item.quantity) || 0;
+
+            const image =
+              product?.images?.[0] ||
+              product?.image ||
+              product?.imageUrl ||
+              "";
+
+            const productId =
+              product?._id;
+
+            return (
+              <div
+                key={`${productId || index}-${item.selectedSize}-${item.selectedColor}`}
+                className="flex gap-4 rounded-2xl border bg-white p-4"
               >
-                <img
-                  src={e.productId.images?.[0]}
-                  alt={e.productId.title}
-                  className="h-32 w-28 rounded-xl object-cover sm:h-40 sm:w-32"
-                />
-              </Link>
 
-              {/* DETAILS */}
-              <div className="flex flex-1 flex-col">
+                {/* IMAGE */}
 
-                <div className="flex justify-between gap-3">
-                  <div>
-                    <h2 className="font-semibold sm:text-lg">
-                      {e.productId.title}
-                    </h2>
+                <Link
+                  to={
+                    productId
+                      ? `/product?id=${productId}`
+                      : "/products"
+                  }
+                  className="shrink-0"
+                >
+                  {image ? (
+                    <img
+                      src={image}
+                      alt={
+                        product?.title ||
+                        "Product"
+                      }
+                      className="h-32 w-28 rounded-xl object-cover sm:h-40 sm:w-32"
+                      onError={(e) => {
+                        e.currentTarget.style.display =
+                          "none";
+                      }}
+                    />
+                  ) : (
+                    <div className="flex h-32 w-28 items-center justify-center rounded-xl bg-gray-100 text-xs text-gray-400 sm:h-40 sm:w-32">
+                      No Image
+                    </div>
+                  )}
+                </Link>
 
-                    <p className="mt-1 text-sm text-gray-500">
-                      Size: {e.selectedSize} · Color:{" "}
-                      {e.selectedColor}
-                    </p>
+                {/* DETAILS */}
 
-                    <p className="mt-1 font-semibold">
-                      ₹{e.productId.price}
-                    </p>
-                  </div>
+                <div className="flex flex-1 flex-col">
 
-                  <button
-                    onClick={() => removeItem(e)}
-                    className="text-gray-400 hover:text-red-500"
-                  >
-                    <Trash2 size={19} />
-                  </button>
-                </div>
+                  <div className="flex justify-between gap-3">
 
-                {/* QUANTITY */}
-                <div className="mt-auto flex items-end justify-between">
+                    <div>
+                      <h2 className="font-semibold sm:text-lg">
+                        {product?.title ||
+                          "Product"}
+                      </h2>
 
-                  <div className="flex items-center rounded-lg border">
+                      <p className="mt-1 text-sm text-gray-500">
+                        Size:{" "}
+                        {item.selectedSize ||
+                          "-"}{" "}
+                        · Color:{" "}
+                        {item.selectedColor ||
+                          "-"}
+                      </p>
+
+                      <p className="mt-1 font-semibold">
+                        ₹{price}
+                      </p>
+                    </div>
 
                     <button
-                      disabled={e.quantity <= 1}
                       onClick={() =>
-                        updateQnty(e, -1)
+                        removeItem(item)
                       }
-                      className="p-2 disabled:opacity-30"
+                      className="text-gray-400 hover:text-red-500"
                     >
-                      <Minus size={15} />
+                      <Trash2 size={19} />
                     </button>
-
-                    <span className="px-3">
-                      {e.quantity}
-                    </span>
-
-                    <button
-                      disabled={
-                        e.quantity >= e.productId.stock
-                      }
-                      onClick={() =>
-                        updateQnty(e, 1)
-                      }
-                      className="p-2 disabled:opacity-30"
-                    >
-                      <Plus size={15} />
-                    </button>
-
                   </div>
 
-                  <p className="font-bold">
-                    ₹{e.productId.price * e.quantity}
-                  </p>
+                  {/* QUANTITY */}
 
+                  <div className="mt-auto flex items-end justify-between">
+
+                    <div className="flex items-center rounded-lg border">
+
+                      <button
+                        disabled={
+                          quantity <= 1
+                        }
+                        onClick={() =>
+                          updateQnty(
+                            item,
+                            -1
+                          )
+                        }
+                        className="p-2 disabled:opacity-30"
+                      >
+                        <Minus size={15} />
+                      </button>
+
+                      <span className="px-3">
+                        {quantity}
+                      </span>
+
+                      <button
+                        disabled={
+                          product?.stock !==
+                            undefined &&
+                          quantity >=
+                            Number(
+                              product.stock
+                            )
+                        }
+                        onClick={() =>
+                          updateQnty(
+                            item,
+                            1
+                          )
+                        }
+                        className="p-2 disabled:opacity-30"
+                      >
+                        <Plus size={15} />
+                      </button>
+
+                    </div>
+
+                    <p className="font-bold">
+                      ₹{price * quantity}
+                    </p>
+
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           {/* COUPON */}
+
           <div className="rounded-2xl border p-5">
+
             <h3 className="flex items-center gap-2 font-semibold">
               <Tag size={18} />
               Apply Coupon
             </h3>
 
             <div className="mt-4 flex gap-3">
+
               <input
                 value={couponCode}
                 onChange={(e) =>
@@ -286,16 +442,18 @@ const Cart = () => {
               />
 
               <button
+                type="button"
                 className="rounded-xl bg-slate-900 px-5 font-semibold text-white"
               >
                 Apply
               </button>
+
             </div>
           </div>
-
         </div>
 
         {/* SUMMARY */}
+
         <div className="h-fit rounded-2xl border bg-gray-50 p-6">
 
           <h2 className="text-xl font-bold">
@@ -327,19 +485,27 @@ const Cart = () => {
             </div>
 
             <div className="border-t pt-4">
+
               <div className="flex justify-between text-lg font-bold">
-                <span>Total</span>
+
+                <span>
+                  Total
+                </span>
 
                 <span>
                   ₹{total}
                 </span>
+
               </div>
+
             </div>
 
           </div>
 
+          {/* CHECKOUT */}
+
           <Link
-            to={`/checkout?user=${userId}`}
+            to="/checkout"
             className="mt-6 flex w-full items-center justify-center rounded-xl bg-green-500 py-3 font-semibold text-white hover:bg-green-600"
           >
             Proceed to Checkout

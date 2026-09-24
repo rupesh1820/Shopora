@@ -20,11 +20,13 @@ const ProductDetails = () => {
   const navigate = useNavigate();
 
   const id = params.get("id");
+
   const token = localStorage.getItem("token");
   const user = JSON.parse(localStorage.getItem("user") || "{}");
 
   const [product, setProduct] = useState(null);
   const [recommended, setRecommended] = useState([]);
+
   const [loading, setLoading] = useState(true);
 
   const [cartLoading, setCartLoading] = useState(false);
@@ -46,7 +48,7 @@ const ProductDetails = () => {
   const [reviewLoading, setReviewLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const userId = user._id || user.id;
+  const userId = user?._id || user?.id;
 
   const config = {
     headers: {
@@ -54,7 +56,8 @@ const ProductDetails = () => {
     },
   };
 
-  // GET PRODUCT
+  // ================= GET PRODUCT =================
+
   useEffect(() => {
     const getProduct = async () => {
       try {
@@ -108,14 +111,17 @@ const ProductDetails = () => {
       }
     };
 
-    if (id) getProduct();
+    if (id) {
+      getProduct();
+    }
   }, [id]);
 
-  // GET REVIEWS
+  // ================= GET REVIEWS =================
+
   const getReviews = async () => {
     try {
       const { data } = await axios.get(
-        `${API_URL}/api/reviews/${id}`
+        `${API_URL}/api/reviews/product/${id}`
       );
 
       if (data.success) {
@@ -127,10 +133,13 @@ const ProductDetails = () => {
   };
 
   useEffect(() => {
-    if (id) getReviews();
+    if (id) {
+      getReviews();
+    }
   }, [id]);
 
-  // ADD / UPDATE REVIEW
+  // ================= SUBMIT REVIEW =================
+
   const submitReview = async () => {
     if (!token) {
       navigate("/login");
@@ -148,7 +157,7 @@ const ProductDetails = () => {
 
       if (editingReview) {
         await axios.put(
-          `${API_URL}/api/reviews/update/${editingReview._id}`,
+          `${API_URL}/api/reviews/${editingReview._id}`,
           {
             rating,
             comment: comment.trim(),
@@ -156,14 +165,15 @@ const ProductDetails = () => {
           config
         );
       } else {
-        await axios.post(
-          `${API_URL}/api/reviews/${id}`,
-          {
-            rating,
-            comment: comment.trim(),
-          },
-          config
-        );
+       await axios.post(
+  `${API_URL}/api/reviews`,
+  {
+    productId: id,
+    rating,
+    comment: comment.trim(),
+  },
+  config
+)
       }
 
       setComment("");
@@ -181,14 +191,15 @@ const ProductDetails = () => {
     }
   };
 
-  // DELETE REVIEW
+  // ================= DELETE REVIEW =================
+
   const deleteReview = async (reviewId) => {
     try {
       setReviewLoading(true);
       setError("");
 
       await axios.delete(
-        `${API_URL}/api/reviews/delete/${reviewId}`,
+        `${API_URL}/api/reviews/${reviewId}`,
         config
       );
 
@@ -203,7 +214,8 @@ const ProductDetails = () => {
     }
   };
 
-  // EDIT REVIEW
+  // ================= EDIT REVIEW =================
+
   const editReview = (e) => {
     setEditingReview(e);
     setRating(e.rating);
@@ -215,7 +227,8 @@ const ProductDetails = () => {
     });
   };
 
-  // ADD TO CART
+  // ================= ADD TO CART =================
+
   const addToCart = async () => {
     if (!token) {
       navigate("/login");
@@ -223,7 +236,9 @@ const ProductDetails = () => {
     }
 
     if (!userId) {
-      setError("User information not found. Please login again.");
+      setError(
+        "User information not found. Please login again."
+      );
       return;
     }
 
@@ -232,11 +247,20 @@ const ProductDetails = () => {
       return;
     }
 
+    if (!product?._id) {
+      setError("Product information not found");
+      return;
+    }
+
+    if (cartLoading) {
+      return;
+    }
+
     try {
       setCartLoading(true);
       setError("");
 
-      await axios.post(
+      const res = await axios.post(
         `${API_URL}/api/cart/${userId}/add`,
         {
           productId: product._id,
@@ -247,9 +271,25 @@ const ProductDetails = () => {
         config
       );
 
-      navigate(`/cart?user=${userId}`);
+      console.log(
+        "ADD TO CART RESPONSE:",
+        res.data
+      );
+
+      if (res.data.success) {
+        navigate(`/cart?user=${userId}`);
+      } else {
+        setError(
+          res.data.message ||
+            "Unable to add product to cart"
+        );
+      }
     } catch (err) {
       console.log("Add cart error:", err);
+      console.log(
+        "Backend response:",
+        err.response?.data
+      );
 
       setError(
         err.response?.data?.message ||
@@ -260,7 +300,8 @@ const ProductDetails = () => {
     }
   };
 
-  // WISHLIST
+  // ================= WISHLIST =================
+
   const addWishlist = async () => {
     if (!token) {
       navigate("/login");
@@ -268,7 +309,9 @@ const ProductDetails = () => {
     }
 
     if (!userId) {
-      setError("User information not found. Please login again.");
+      setError(
+        "User information not found. Please login again."
+      );
       return;
     }
 
@@ -298,7 +341,8 @@ const ProductDetails = () => {
     }
   };
 
-  // BUY NOW
+  // ================= BUY NOW =================
+
   const buyNow = async () => {
     if (!token) {
       navigate("/login");
@@ -306,7 +350,9 @@ const ProductDetails = () => {
     }
 
     if (!userId) {
-      setError("User information not found. Please login again.");
+      setError(
+        "User information not found. Please login again."
+      );
       return;
     }
 
@@ -315,11 +361,20 @@ const ProductDetails = () => {
       return;
     }
 
+    if (!product?._id) {
+      setError("Product information not found");
+      return;
+    }
+
+    if (buyLoading) {
+      return;
+    }
+
     try {
       setBuyLoading(true);
       setError("");
 
-      await axios.post(
+      const res = await axios.post(
         `${API_URL}/api/cart/${userId}/add`,
         {
           productId: product._id,
@@ -330,9 +385,25 @@ const ProductDetails = () => {
         config
       );
 
-      navigate(`/checkout?user=${userId}`);
+      console.log(
+        "BUY NOW RESPONSE:",
+        res.data
+      );
+
+      if (res.data.success) {
+        navigate(`/checkout?user=${userId}`);
+      } else {
+        setError(
+          res.data.message ||
+            "Unable to continue to checkout"
+        );
+      }
     } catch (err) {
       console.log("Buy now error:", err);
+      console.log(
+        "Backend response:",
+        err.response?.data
+      );
 
       setError(
         err.response?.data?.message ||
@@ -343,7 +414,8 @@ const ProductDetails = () => {
     }
   };
 
-  // PRODUCT LOADING
+  // ================= PRODUCT LOADING =================
+
   if (loading && !product) {
     return (
       <p className="p-10 text-center">
@@ -375,18 +447,26 @@ const ProductDetails = () => {
     <main className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
 
       {/* BREADCRUMB */}
+
       <p className="mb-5 text-xs text-gray-500 sm:mb-8 sm:text-sm">
-        <Link to="/" className="hover:text-black">
+        <Link
+          to="/"
+          className="hover:text-black"
+        >
           Home
         </Link>{" "}
         /{" "}
-        <Link to="/products" className="hover:text-black">
+        <Link
+          to="/products"
+          className="hover:text-black"
+        >
           Products
         </Link>{" "}
         / {product.title}
       </p>
 
       {/* ERROR */}
+
       {error && (
         <div className="mb-5 rounded-lg border bg-gray-100 px-4 py-3 text-sm">
           {error}
@@ -394,9 +474,11 @@ const ProductDetails = () => {
       )}
 
       {/* PRODUCT */}
+
       <div className="grid gap-7 md:grid-cols-2 lg:gap-10">
 
         {/* IMAGES */}
+
         <div>
           <div className="overflow-hidden rounded-2xl bg-gray-100">
             <img
@@ -428,12 +510,15 @@ const ProductDetails = () => {
         </div>
 
         {/* DETAILS */}
+
         <div>
+
           <h1 className="text-2xl font-bold sm:text-3xl lg:text-4xl">
             {product.title}
           </h1>
 
           {/* RATING */}
+
           <div className="mt-3 flex items-center gap-2">
             <div className="flex text-yellow-500">
               {[1, 2, 3, 4, 5].map((e) => (
@@ -456,6 +541,7 @@ const ProductDetails = () => {
           </div>
 
           {/* PRICE */}
+
           <div className="mt-5 flex flex-wrap items-center gap-3">
             <span className="text-2xl font-bold sm:text-3xl">
               ₹{product.price}
@@ -479,6 +565,7 @@ const ProductDetails = () => {
           </p>
 
           {/* SIZE */}
+
           {product.sizes?.length > 0 && (
             <div className="mt-7">
               <h3 className="mb-3 font-semibold">
@@ -504,6 +591,7 @@ const ProductDetails = () => {
           )}
 
           {/* COLOR */}
+
           {product.colors?.length > 0 && (
             <div className="mt-6">
               <h3 className="mb-3 font-semibold">
@@ -529,6 +617,7 @@ const ProductDetails = () => {
           )}
 
           {/* QUANTITY */}
+
           <div className="mt-6 flex items-center gap-4">
             <span className="font-semibold">
               Quantity
@@ -562,6 +651,7 @@ const ProductDetails = () => {
           </div>
 
           {/* STOCK */}
+
           <p className="mt-3 text-sm text-gray-500">
             {product.stock > 0
               ? `${product.stock} items available`
@@ -569,13 +659,14 @@ const ProductDetails = () => {
           </p>
 
           {/* ACTIONS */}
+
           <div className="mt-8 flex gap-2 sm:gap-3">
 
             {/* ADD TO CART */}
+
             <button
               disabled={
                 cartLoading ||
-                buyLoading ||
                 product.stock <= 0
               }
               onClick={addToCart}
@@ -589,6 +680,7 @@ const ProductDetails = () => {
             </button>
 
             {/* WISHLIST */}
+
             <button
               disabled={wishLoading}
               onClick={addWishlist}
@@ -611,10 +703,10 @@ const ProductDetails = () => {
           </div>
 
           {/* BUY NOW */}
+
           <button
             disabled={
               buyLoading ||
-              cartLoading ||
               product.stock <= 0
             }
             onClick={buyNow}
@@ -628,6 +720,7 @@ const ProductDetails = () => {
       </div>
 
       {/* DESCRIPTION */}
+
       <section className="mt-12 border-t pt-8 sm:mt-16 sm:pt-10">
         <h2 className="text-xl font-bold sm:text-2xl">
           Product Description
@@ -639,12 +732,14 @@ const ProductDetails = () => {
       </section>
 
       {/* REVIEWS */}
+
       <section className="mt-12 border-t pt-8 sm:mt-16 sm:pt-10">
         <h2 className="text-xl font-bold sm:text-2xl">
           Customer Reviews
         </h2>
 
         {/* REVIEW FORM */}
+
         <div className="mt-6 rounded-xl border p-4 sm:p-6">
           <h3 className="font-semibold">
             {editingReview
@@ -710,6 +805,7 @@ const ProductDetails = () => {
         </div>
 
         {/* REVIEW LIST */}
+
         <div className="mt-7 space-y-5">
           {!reviews.length ? (
             <p className="text-gray-500">
@@ -717,8 +813,13 @@ const ProductDetails = () => {
             </p>
           ) : (
             reviews.map((e) => {
+              const reviewUserId =
+                e.userId?._id ||
+                e.userId?.id ||
+                e.userId;
+
               const own =
-                e.userId?._id?.toString() ===
+                reviewUserId?.toString() ===
                 userId?.toString();
 
               return (
@@ -755,7 +856,7 @@ const ProductDetails = () => {
                           onClick={() =>
                             editReview(e)
                           }
-                          className="underline"
+                          className="cursor-pointer underline"
                         >
                           Edit
                         </button>
@@ -765,7 +866,7 @@ const ProductDetails = () => {
                           onClick={() =>
                             deleteReview(e._id)
                           }
-                          className="text-red-500"
+                          className="cursor-pointer text-red-500 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           Delete
                         </button>
@@ -790,6 +891,7 @@ const ProductDetails = () => {
       </section>
 
       {/* RECOMMENDED */}
+
       <section className="mt-12 sm:mt-16">
         <h2 className="text-xl font-bold sm:text-2xl">
           You May Also Like
