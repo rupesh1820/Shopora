@@ -22,7 +22,7 @@ const { width } = Dimensions.get("window");
 
 const ProductDetailScreen = ({ route, navigation }) => {
   const insets = useSafeAreaInsets();
-  const bottomPadding = Math.max(insets.bottom, 14);
+  const bottomPadding = Math.max(insets.bottom, 16) + 6;
   const { productId } = route.params;
 
   const [product, setProduct] = useState(null);
@@ -111,7 +111,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
       <ScrollView
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: 80 + bottomPadding },
+          { paddingBottom: 110 + bottomPadding },
         ]}
         showsVerticalScrollIndicator={false}
       >

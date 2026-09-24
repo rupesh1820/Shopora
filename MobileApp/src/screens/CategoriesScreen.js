@@ -8,6 +8,7 @@ import {
   Image,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { COLORS } from "../constants/colors";
 import Header from "../components/Header";
 
@@ -41,6 +42,7 @@ const CATEGORY_ITEMS = {
 };
 
 const CategoriesScreen = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
   const [selectedGender, setSelectedGender] = useState("Men");
 
   const categories = CATEGORY_ITEMS[selectedGender] || [];
@@ -72,7 +74,13 @@ const CategoriesScreen = ({ navigation }) => {
         ))}
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: 110 + insets.bottom },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.grid}>
           {categories.map((item) => (
             <TouchableOpacity
@@ -137,7 +145,6 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
-    paddingBottom: 32,
   },
   grid: {
     flexDirection: "row",

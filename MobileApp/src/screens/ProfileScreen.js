@@ -8,11 +8,13 @@ import {
   Alert,
 } from "react-native";
 import { Feather, Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { COLORS } from "../constants/colors";
 import Header from "../components/Header";
 import { useAuth } from "../context/AuthContext";
 
 const ProfileScreen = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
   const { user, isAuthenticated, logout } = useAuth();
 
   const handleLogout = () => {
@@ -26,7 +28,13 @@ const ProfileScreen = ({ navigation }) => {
     <View style={styles.container}>
       <Header title="My Account" navigation={navigation} />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: 110 + insets.bottom },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
         {/* USER PROFILE CARD */}
         <View style={styles.userCard}>
           <View style={styles.avatar}>
@@ -107,47 +115,49 @@ const ProfileScreen = ({ navigation }) => {
             onPress={() => navigation.navigate("CartTab")}
           >
             <View style={styles.menuLeft}>
-              <View style={[styles.menuIconCircle, { backgroundColor: "#f0f9ff" }]}>
-                <Feather name="shopping-bag" size={18} color="#0284c7" />
+              <View style={[styles.menuIconCircle, { backgroundColor: "#eff6ff" }]}>
+                <Feather name="shopping-bag" size={18} color="#2563eb" />
               </View>
-              <Text style={styles.menuLabel}>My Shopping Bag</Text>
+              <Text style={styles.menuLabel}>My Cart</Text>
             </View>
             <Feather name="chevron-right" size={18} color={COLORS.textLight} />
           </TouchableOpacity>
         </View>
 
-        {/* SUPPORT SECTION */}
+        {/* APP INFO & SUPPORT */}
         <View style={styles.menuSection}>
-          <TouchableOpacity style={styles.menuItem}>
+          <View style={styles.menuItemStatic}>
             <View style={styles.menuLeft}>
               <View style={[styles.menuIconCircle, { backgroundColor: "#f8fafc" }]}>
-                <Feather name="help-circle" size={18} color={COLORS.textMuted} />
+                <Feather name="shield" size={18} color={COLORS.text} />
               </View>
-              <Text style={styles.menuLabel}>Help & Support</Text>
+              <Text style={styles.menuLabel}>100% Secure Checkout</Text>
             </View>
-            <Feather name="chevron-right" size={18} color={COLORS.textLight} />
-          </TouchableOpacity>
+          </View>
 
-          <TouchableOpacity style={styles.menuItem}>
+          <View style={styles.menuItemStatic}>
             <View style={styles.menuLeft}>
               <View style={[styles.menuIconCircle, { backgroundColor: "#f8fafc" }]}>
-                <Feather name="shield" size={18} color={COLORS.textMuted} />
+                <Feather name="headphones" size={18} color={COLORS.text} />
               </View>
-              <Text style={styles.menuLabel}>Privacy Policy & Terms</Text>
+              <Text style={styles.menuLabel}>Customer Support 24/7</Text>
             </View>
-            <Feather name="chevron-right" size={18} color={COLORS.textLight} />
-          </TouchableOpacity>
+          </View>
         </View>
 
         {/* LOGOUT BUTTON */}
         {isAuthenticated && (
-          <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+          <TouchableOpacity
+            style={styles.logoutBtn}
+            onPress={handleLogout}
+            activeOpacity={0.8}
+          >
             <Feather name="log-out" size={18} color={COLORS.danger} />
             <Text style={styles.logoutText}>Logout</Text>
           </TouchableOpacity>
         )}
 
-        <Text style={styles.appVersion}>Shopara Mobile App • Version 1.0.0</Text>
+        <Text style={styles.versionText}>Shopara Mobile App v1.0.0</Text>
       </ScrollView>
     </View>
   );
@@ -160,7 +170,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
-    paddingBottom: 32,
+    paddingTop: 12,
   },
   userCard: {
     flexDirection: "row",
@@ -243,7 +253,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   registerBtnText: {
-    color: COLORS.text,
+    color: COLORS.dark,
     fontSize: 13,
     fontWeight: "700",
   },
@@ -262,11 +272,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
+    borderBottomColor: COLORS.border,
+  },
+  menuItemStatic: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
   },
   menuLeft: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 12,
   },
   menuIconCircle: {
     width: 36,
@@ -274,7 +294,6 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 12,
   },
   menuLabel: {
     fontSize: 14,
@@ -285,22 +304,23 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#fee2e2",
-    paddingVertical: 14,
+    backgroundColor: "#fef2f2",
     borderRadius: 14,
+    paddingVertical: 14,
     gap: 8,
-    marginTop: 8,
+    borderWidth: 1,
+    borderColor: "#fee2e2",
+    marginBottom: 16,
   },
   logoutText: {
     color: COLORS.danger,
     fontSize: 14,
     fontWeight: "700",
   },
-  appVersion: {
+  versionText: {
     textAlign: "center",
     fontSize: 11,
     color: COLORS.textLight,
-    marginTop: 24,
   },
 });
 

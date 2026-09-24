@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { COLORS } from "../constants/colors";
 import Header from "../components/Header";
 import LoadingSpinner from "../components/LoadingSpinner";
@@ -16,6 +17,7 @@ import { useAuth } from "../context/AuthContext";
 import { getUserOrders } from "../api/orders";
 
 const OrderHistoryScreen = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -60,7 +62,10 @@ const OrderHistoryScreen = ({ navigation }) => {
         <FlatList
           data={orders}
           keyExtractor={(item) => item._id}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[
+            styles.listContent,
+            { paddingBottom: 40 + insets.bottom },
+          ]}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <EmptyState

@@ -7,15 +7,14 @@ import {
   FlatList,
   TouchableOpacity,
   RefreshControl,
-  ImageBackground,
+  ActivityIndicator,
 } from "react-native";
-import { Feather, Ionicons } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import { COLORS } from "../constants/colors";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Header from "../components/Header";
 import ProductCard from "../components/ProductCard";
 import CategoryChip from "../components/CategoryChip";
-import LoadingSpinner from "../components/LoadingSpinner";
 import { getProducts } from "../api/products";
 
 const CATEGORIES = [
@@ -43,10 +42,12 @@ const HomeScreen = ({ navigation }) => {
     try {
       setLoading(true);
       const data = await getProducts();
-      setProducts(data);
-      setFilteredProducts(data);
+      if (Array.isArray(data) && data.length > 0) {
+        setProducts(data);
+        setFilteredProducts(data);
+      }
     } catch (e) {
-      console.error("Fetch products error:", e);
+      console.warn("Fetch products error in HomeScreen:", e.message);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -81,16 +82,12 @@ const HomeScreen = ({ navigation }) => {
     }
   };
 
-  if (loading && !refreshing) {
-    return <LoadingSpinner text="Loading Shopara Fashion..." />;
-  }
-
   const renderHeader = () => (
     <View>
-      {/* HERO BANNER - Exact match with website dark style */}
+      {/* HERO BANNER */}
       <View style={styles.heroCard}>
         <View style={styles.heroBadge}>
-          <Text style={styles.heroBadgeText}>SHOPORA FASHION</Text>
+          <Text style={styles.heroBadgeText}>SHOPARA FASHION</Text>
         </View>
         <Text style={styles.heroTitle}>Discover Your Everyday Style</Text>
         <Text style={styles.heroSubtitle}>
@@ -155,6 +152,7 @@ const HomeScreen = ({ navigation }) => {
         </View>
         <TouchableOpacity
           onPress={() => navigation.navigate("SearchScreen")}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <Text style={styles.viewAllText}>View All</Text>
         </TouchableOpacity>
@@ -166,19 +164,25 @@ const HomeScreen = ({ navigation }) => {
     <View style={styles.container}>
       <Header navigation={navigation} />
 
-      <FlatList
-        data={filteredProducts}
-        keyExtractor={(item) => item._id}
-        numColumns={2}
-        ListHeaderComponent={renderHeader}
-        contentContainerStyle={[
-          styles.listContent,
-          { paddingBottom: 40 + insets.bottom },
-        ]}
-        columnWrapperStyle={styles.columnWrapper}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          !loading && (
+      {loading && !refreshing && products.length === 0 ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={styles.loadingText}>Loading Shopara Fashion...</Text>
+          <Text style={styles.loadingSub}>Connecting to cloud server, please wait</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredProducts}
+          keyExtractor={(item) => item._id}
+          numColumns={2}
+          ListHeaderComponent={renderHeader}
+          contentContainerStyle={[
+            styles.listContent,
+            { paddingBottom: 110 + insets.bottom },
+          ]}
+          columnWrapperStyle={styles.columnWrapper}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Feather name="shopping-bag" size={48} color={COLORS.textLight} />
               <Text style={styles.emptyTitle}>No products found</Text>
@@ -192,24 +196,25 @@ const HomeScreen = ({ navigation }) => {
                 <Text style={styles.retryBtnText}>Reload Products</Text>
               </TouchableOpacity>
             </View>
-          )
-        }
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={[COLORS.primary]}
-          />
-        }
-        renderItem={({ item }) => (
-          <ProductCard
-            product={item}
-            onPress={() =>
-              navigation.navigate("ProductDetail", { productId: item._id })
-            }
-          />
-        )}
-      />
+          }
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[COLORS.primary]}
+              tintColor={COLORS.primary}
+            />
+          }
+          renderItem={({ item }) => (
+            <ProductCard
+              product={item}
+              onPress={() =>
+                navigation.navigate("ProductDetail", { productId: item._id })
+              }
+            />
+          )}
+        />
+      )}
     </View>
   );
 };
@@ -220,8 +225,8 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   listContent: {
-    paddingHorizontal: 10,
-    paddingBottom: 24,
+    paddingHorizontal: 12,
+    paddingTop: 8,
   },
   columnWrapper: {
     justifyContent: "space-between",
@@ -230,7 +235,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.dark,
     borderRadius: 20,
     padding: 20,
-    marginTop: 12,
+    marginTop: 10,
     marginBottom: 16,
   },
   heroBadge: {
@@ -327,6 +332,24 @@ const styles = StyleSheet.create({
     width: 1,
     height: 16,
     backgroundColor: COLORS.border,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 32,
+  },
+  loadingText: {
+    marginTop: 14,
+    fontSize: 15,
+    fontWeight: "700",
+    color: COLORS.dark,
+  },
+  loadingSub: {
+    marginTop: 6,
+    fontSize: 12,
+    color: COLORS.textMuted,
+    textAlign: "center",
   },
   emptyContainer: {
     alignItems: "center",

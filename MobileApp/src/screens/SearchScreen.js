@@ -8,6 +8,7 @@ import {
   FlatList,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { COLORS } from "../constants/colors";
 import Header from "../components/Header";
 import ProductCard from "../components/ProductCard";
@@ -18,6 +19,7 @@ import { getProducts } from "../api/products";
 const FILTERS = ["All", "Men", "Women", "Kids", "Sale"];
 
 const SearchScreen = ({ route, navigation }) => {
+  const insets = useSafeAreaInsets();
   const initialGender = route.params?.gender || "";
   const initialCategory = route.params?.category || "";
   const initialSale = route.params?.sale || false;
@@ -153,7 +155,10 @@ const SearchScreen = ({ route, navigation }) => {
           data={filteredList}
           keyExtractor={(item) => item._id}
           numColumns={2}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[
+            styles.listContent,
+            { paddingBottom: 40 + insets.bottom },
+          ]}
           columnWrapperStyle={styles.columnWrapper}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={

@@ -10,6 +10,7 @@ import {
   Alert,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { COLORS } from "../constants/colors";
 import Header from "../components/Header";
 import EmptyState from "../components/EmptyState";
@@ -17,6 +18,7 @@ import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 
 const CartScreen = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
   const { cartItems, cartCount, cartSubtotal, updateQuantity, removeFromCart } =
     useCart();
   const { isAuthenticated } = useAuth();
@@ -74,13 +76,15 @@ const CartScreen = ({ navigation }) => {
     return (
       <View style={styles.container}>
         <Header title="My Shopping Bag" navigation={navigation} />
-        <EmptyState
-          icon="shopping-bag"
-          title="Your Shopping Bag is Empty"
-          description="Looks like you haven't added anything to your cart yet. Explore our latest styles!"
-          btnText="Start Shopping"
-          onPress={() => navigation.navigate("HomeTab")}
-        />
+        <View style={{ flex: 1, paddingBottom: 80 + insets.bottom }}>
+          <EmptyState
+            icon="shopping-bag"
+            title="Your Shopping Bag is Empty"
+            description="Looks like you haven't added anything to your cart yet. Explore our latest styles!"
+            btnText="Start Shopping"
+            onPress={() => navigation.navigate("HomeTab")}
+          />
+        </View>
       </View>
     );
   }
@@ -90,7 +94,10 @@ const CartScreen = ({ navigation }) => {
       <Header title={`My Bag (${cartCount})`} navigation={navigation} />
 
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: 130 + insets.bottom },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         {/* CART ITEMS LIST */}
@@ -99,15 +106,18 @@ const CartScreen = ({ navigation }) => {
             const product = item.product || {};
             const imgUri =
               product.images?.[0] ||
-              "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=600&q=80";
+              "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=300&q=80";
 
             return (
-              <View key={`${item.productId}-${idx}`} style={styles.cartCard}>
-                <Image source={{ uri: imgUri }} style={styles.cardImage} />
+              <View
+                key={`${item.productId}-${item.selectedSize}-${item.selectedColor}-${idx}`}
+                style={styles.cartCard}
+              >
+                <Image source={{ uri: imgUri }} style={styles.cartImage} />
 
-                <View style={styles.cardInfo}>
-                  <View style={styles.topRow}>
-                    <Text style={styles.productTitle} numberOfLines={1}>
+                <View style={styles.cardDetails}>
+                  <View style={styles.titleRow}>
+                    <Text style={styles.itemTitle} numberOfLines={1}>
                       {product.title || "Product"}
                     </Text>
                     <TouchableOpacity
@@ -124,31 +134,31 @@ const CartScreen = ({ navigation }) => {
                     </TouchableOpacity>
                   </View>
 
-                  <View style={styles.variantRow}>
+                  <View style={styles.metaRow}>
                     {item.selectedSize && (
-                      <View style={styles.variantTag}>
-                        <Text style={styles.variantText}>
+                      <View style={styles.metaBadge}>
+                        <Text style={styles.metaBadgeText}>
                           Size: {item.selectedSize}
                         </Text>
                       </View>
                     )}
                     {item.selectedColor && (
-                      <View style={styles.variantTag}>
-                        <Text style={styles.variantText}>
+                      <View style={styles.metaBadge}>
+                        <Text style={styles.metaBadgeText}>
                           {item.selectedColor}
                         </Text>
                       </View>
                     )}
                   </View>
 
-                  <View style={styles.priceStepperRow}>
+                  <View style={styles.bottomRow}>
                     <Text style={styles.itemPrice}>
                       ₹{(product.price || 0) * item.quantity}
                     </Text>
 
-                    <View style={styles.stepper}>
+                    <View style={styles.qtyControl}>
                       <TouchableOpacity
-                        style={styles.stepBtn}
+                        style={styles.qtyBtn}
                         onPress={() =>
                           updateQuantity(
                             item.productId,
@@ -158,13 +168,13 @@ const CartScreen = ({ navigation }) => {
                           )
                         }
                       >
-                        <Feather name="minus" size={14} color={COLORS.text} />
+                        <Feather name="minus" size={14} color={COLORS.dark} />
                       </TouchableOpacity>
 
-                      <Text style={styles.stepQty}>{item.quantity}</Text>
+                      <Text style={styles.qtyText}>{item.quantity}</Text>
 
                       <TouchableOpacity
-                        style={styles.stepBtn}
+                        style={styles.qtyBtn}
                         onPress={() =>
                           updateQuantity(
                             item.productId,
@@ -174,7 +184,7 @@ const CartScreen = ({ navigation }) => {
                           )
                         }
                       >
-                        <Feather name="plus" size={14} color={COLORS.text} />
+                        <Feather name="plus" size={14} color={COLORS.dark} />
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -184,9 +194,9 @@ const CartScreen = ({ navigation }) => {
           })}
         </View>
 
-        {/* COUPON SECTION */}
+        {/* PROMO / COUPON CARD */}
         <View style={styles.couponCard}>
-          <Text style={styles.cardTitle}>Have a Coupon Code?</Text>
+          <Text style={styles.cardTitle}>Apply Promo Code</Text>
           <View style={styles.couponInputRow}>
             <TextInput
               style={styles.couponInput}
@@ -250,12 +260,13 @@ const CartScreen = ({ navigation }) => {
           <Text style={styles.checkoutTotalLabel}>Total Payable</Text>
           <Text style={styles.checkoutTotalValue}>₹{totalAmount}</Text>
         </View>
+
         <TouchableOpacity
           style={styles.checkoutBtn}
           activeOpacity={0.85}
           onPress={handleProceedCheckout}
         >
-          <Text style={styles.checkoutBtnText}>Proceed to Checkout</Text>
+          <Text style={styles.checkoutBtnText}>Checkout</Text>
           <Feather name="arrow-right" size={16} color="#fff" />
         </TouchableOpacity>
       </View>
@@ -270,9 +281,10 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
-    paddingBottom: 100,
+    paddingTop: 12,
   },
   itemList: {
+    gap: 12,
     marginBottom: 16,
   },
   cartCard: {
@@ -282,77 +294,74 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
     padding: 12,
-    marginBottom: 12,
-    alignItems: "center",
+    gap: 12,
   },
-  cardImage: {
+  cartImage: {
     width: 80,
-    height: 96,
-    borderRadius: 12,
+    height: 90,
+    borderRadius: 10,
     backgroundColor: "#f1f5f9",
   },
-  cardInfo: {
+  cardDetails: {
     flex: 1,
-    marginLeft: 12,
     justifyContent: "space-between",
   },
-  topRow: {
+  titleRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
   },
-  productTitle: {
+  itemTitle: {
     fontSize: 14,
     fontWeight: "700",
-    color: COLORS.text,
+    color: COLORS.dark,
     flex: 1,
     marginRight: 8,
   },
-  variantRow: {
+  metaRow: {
     flexDirection: "row",
-    gap: 6,
-    marginTop: 4,
+    gap: 8,
+    marginVertical: 4,
   },
-  variantTag: {
+  metaBadge: {
     backgroundColor: "#f1f5f9",
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 6,
   },
-  variantText: {
+  metaBadgeText: {
     fontSize: 11,
     color: COLORS.textMuted,
     fontWeight: "600",
   },
-  priceStepperRow: {
+  bottomRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 10,
+    marginTop: 4,
   },
   itemPrice: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "800",
-    color: COLORS.dark,
+    color: COLORS.primaryDark,
   },
-  stepper: {
+  qtyControl: {
     flexDirection: "row",
     alignItems: "center",
+    backgroundColor: "#f8fafc",
     borderWidth: 1,
     borderColor: COLORS.border,
     borderRadius: 8,
-    backgroundColor: "#f8fafc",
   },
-  stepBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+  qtyBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
-  stepQty: {
+  qtyText: {
     fontSize: 13,
     fontWeight: "700",
-    color: COLORS.text,
-    minWidth: 20,
-    textAlign: "center",
+    color: COLORS.dark,
+    paddingHorizontal: 8,
   },
   couponCard: {
     backgroundColor: COLORS.card,
@@ -370,25 +379,26 @@ const styles = StyleSheet.create({
   },
   couponInputRow: {
     flexDirection: "row",
-    gap: 8,
+    gap: 10,
   },
   couponInput: {
     flex: 1,
     height: 44,
     borderWidth: 1,
     borderColor: COLORS.border,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    fontSize: 14,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    fontSize: 13,
+    fontWeight: "600",
     color: COLORS.text,
     backgroundColor: "#f8fafc",
   },
   applyBtn: {
     backgroundColor: COLORS.dark,
     paddingHorizontal: 18,
-    borderRadius: 12,
-    alignItems: "center",
+    borderRadius: 10,
     justifyContent: "center",
+    alignItems: "center",
   },
   applyBtnText: {
     color: "#fff",
@@ -449,7 +459,12 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
   },
   checkoutTotalLabel: {
     fontSize: 11,
@@ -464,7 +479,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 20,
+    paddingHorizontal: 22,
     paddingVertical: 12,
     borderRadius: 14,
     gap: 8,

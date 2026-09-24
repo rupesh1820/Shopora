@@ -1,5 +1,6 @@
 import React from "react";
 import { View, StyleSheet, FlatList } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { COLORS } from "../constants/colors";
 import Header from "../components/Header";
 import ProductCard from "../components/ProductCard";
@@ -7,6 +8,7 @@ import EmptyState from "../components/EmptyState";
 import { useWishlist } from "../context/WishlistContext";
 
 const WishlistScreen = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
   const { wishlist, wishlistCount } = useWishlist();
 
   return (
@@ -17,7 +19,10 @@ const WishlistScreen = ({ navigation }) => {
         data={wishlist}
         keyExtractor={(item) => item._id || String(Math.random())}
         numColumns={2}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[
+          styles.listContent,
+          { paddingBottom: 110 + insets.bottom },
+        ]}
         columnWrapperStyle={styles.columnWrapper}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
@@ -48,8 +53,8 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   listContent: {
-    paddingHorizontal: 10,
-    paddingVertical: 14,
+    paddingHorizontal: 12,
+    paddingTop: 12,
   },
   columnWrapper: {
     justifyContent: "space-between",
