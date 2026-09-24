@@ -19,7 +19,10 @@ const BottomTabNavigator = () => {
   const { cartCount } = useCart();
   const { wishlistCount } = useWishlist();
   const insets = useSafeAreaInsets();
-  const bottomPadding = Math.max(insets.bottom, Platform.OS === "android" ? 10 : 8);
+  
+  // Generous bottom padding for gestures / physical home bars
+  const bottomPadding = Math.max(insets.bottom, Platform.OS === "android" ? 14 : 12);
+  const tabHeight = 60 + bottomPadding;
 
   return (
     <Tab.Navigator
@@ -28,16 +31,25 @@ const BottomTabNavigator = () => {
         tabBarActiveTintColor: COLORS.primary,
         tabBarInactiveTintColor: COLORS.textMuted,
         tabBarStyle: {
-          height: 56 + bottomPadding,
+          height: tabHeight,
           paddingBottom: bottomPadding,
-          paddingTop: 8,
+          paddingTop: 10,
           backgroundColor: COLORS.card,
           borderTopWidth: 1,
           borderTopColor: COLORS.border,
+          elevation: 8,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.06,
+          shadowRadius: 4,
         },
         tabBarLabelStyle: {
           fontSize: 11,
-          fontWeight: "600",
+          fontWeight: "700",
+          marginTop: 2,
+        },
+        tabBarItemStyle: {
+          paddingVertical: 2,
         },
       }}
     >
@@ -47,7 +59,7 @@ const BottomTabNavigator = () => {
         options={{
           tabBarLabel: "Home",
           tabBarIcon: ({ color, size }) => (
-            <Feather name="home" size={size} color={color} />
+            <Feather name="home" size={22} color={color} />
           ),
         }}
       />
@@ -58,7 +70,7 @@ const BottomTabNavigator = () => {
         options={{
           tabBarLabel: "Categories",
           tabBarIcon: ({ color, size }) => (
-            <Feather name="grid" size={size} color={color} />
+            <Feather name="grid" size={22} color={color} />
           ),
         }}
       />
@@ -77,7 +89,7 @@ const BottomTabNavigator = () => {
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? "heart" : "heart-outline"}
-              size={size}
+              size={22}
               color={color}
             />
           ),
@@ -96,7 +108,7 @@ const BottomTabNavigator = () => {
             fontWeight: "700",
           },
           tabBarIcon: ({ color, size }) => (
-            <Feather name="shopping-bag" size={size} color={color} />
+            <Feather name="shopping-bag" size={22} color={color} />
           ),
         }}
       />
@@ -107,7 +119,7 @@ const BottomTabNavigator = () => {
         options={{
           tabBarLabel: "Account",
           tabBarIcon: ({ color, size }) => (
-            <Feather name="user" size={size} color={color} />
+            <Feather name="user" size={22} color={color} />
           ),
         }}
       />

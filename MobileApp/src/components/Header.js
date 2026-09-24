@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Platform } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Platform, StatusBar } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { COLORS } from "../constants/colors";
@@ -8,68 +8,86 @@ import { useCart } from "../context/CartContext";
 const Header = ({ title, showBack = false, onBack, navigation }) => {
   const insets = useSafeAreaInsets();
   const { cartCount } = useCart();
-  const topPadding = Math.max(insets.top, Platform.OS === "android" ? 16 : 12);
+
+  // Top inset with generous safe padding across Android status bar & iOS notch
+  const topInset =
+    Platform.OS === "android"
+      ? Math.max(insets.top, StatusBar.currentHeight ? StatusBar.currentHeight + 6 : 30)
+      : Math.max(insets.top, 24);
 
   return (
-    <View style={[styles.container, { paddingTop: topPadding, height: 56 + topPadding }]}>
-      <View style={styles.leftRow}>
-        {showBack && (
+    <View style={[styles.wrapper, { paddingTop: topInset }]}>
+      <View style={styles.headerBar}>
+        <View style={styles.leftRow}>
+          {showBack && (
+            <TouchableOpacity
+              style={styles.iconBtn}
+              onPress={onBack || (() => navigation?.goBack())}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <Feather name="arrow-left" size={22} color={COLORS.text} />
+            </TouchableOpacity>
+          )}
+          {title ? (
+            <Text style={styles.title} numberOfLines={1}>
+              {title}
+            </Text>
+          ) : (
+            <TouchableOpacity onPress={() => navigation?.navigate("HomeTab")}>
+              <Text style={styles.logo}>
+                Shop<Text style={{ color: COLORS.primary }}>ora</Text>
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        <View style={styles.rightRow}>
           <TouchableOpacity
             style={styles.iconBtn}
-            onPress={onBack || (() => navigation?.goBack())}
+            onPress={() => navigation?.navigate("SearchScreen")}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           >
-            <Feather name="arrow-left" size={22} color={COLORS.text} />
+            <Feather name="search" size={21} color={COLORS.text} />
           </TouchableOpacity>
-        )}
-        {title ? (
-          <Text style={styles.title} numberOfLines={1}>
-            {title}
-          </Text>
-        ) : (
-          <TouchableOpacity onPress={() => navigation?.navigate("HomeTab")}>
-            <Text style={styles.logo}>
-              Shop<Text style={{ color: COLORS.primary }}>ora</Text>
-            </Text>
+
+          <TouchableOpacity
+            style={styles.iconBtn}
+            onPress={() => navigation?.navigate("CartTab")}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          >
+            <Feather name="shopping-bag" size={21} color={COLORS.text} />
+            {cartCount > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>
+                  {cartCount > 99 ? "99+" : cartCount}
+                </Text>
+              </View>
+            )}
           </TouchableOpacity>
-        )}
-      </View>
-
-      <View style={styles.rightRow}>
-        <TouchableOpacity
-          style={styles.iconBtn}
-          onPress={() => navigation?.navigate("SearchScreen")}
-        >
-          <Feather name="search" size={21} color={COLORS.text} />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.iconBtn}
-          onPress={() => navigation?.navigate("CartTab")}
-        >
-          <Feather name="shopping-bag" size={21} color={COLORS.text} />
-          {cartCount > 0 && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>
-                {cartCount > 99 ? "99+" : cartCount}
-              </Text>
-            </View>
-          )}
-        </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  wrapper: {
+    backgroundColor: COLORS.card,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    zIndex: 10,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 2,
+  },
+  headerBar: {
     height: 56,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    backgroundColor: COLORS.card,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
   },
   leftRow: {
     flexDirection: "row",
