@@ -6,7 +6,7 @@ import Footer from "./Components/Footer";
 
 import Login from "./Auth/Login";
 import Register from "./Auth/Register";
-
+import ForgotPassword from "./Auth/ForgotPassword";
 import Products from "./Components/Products";
 import ProductDetails from "./Pages/ProductDetails";
 import Cart from "./Pages/Cart";
@@ -72,6 +72,7 @@ function App() {
         {/* Authentication */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/auth" element={<ForgotPassword />} />
       </Routes>
 {/* DOne */}
       <Footer />

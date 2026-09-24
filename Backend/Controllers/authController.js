@@ -12,7 +12,7 @@ const generateToken = (user) => {
       email: user.email,
     },
     process.env.JWT_SECRET,
-    { expiresIn: "7d" },
+    { expiresIn: "7d" }
   );
 };
 
@@ -21,10 +21,16 @@ const generateOtp = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-// REGISTER
+// ================= REGISTER =================
+
 export const register = async (req, res) => {
   try {
-    const { fullName, email, password, confirmPassword } = req.body;
+    const {
+      fullName,
+      email,
+      password,
+      confirmPassword,
+    } = req.body;
 
     if (!fullName || !email || !password || !confirmPassword) {
       return res.status(400).json({
@@ -54,7 +60,6 @@ export const register = async (req, res) => {
     });
 
     if (existingUser) {
-      // Agar account already verify ho chuka hai
       if (existingUser.isVerified) {
         return res.status(400).json({
           success: false,
@@ -62,12 +67,16 @@ export const register = async (req, res) => {
         });
       }
 
-      // Account bana hai but OTP verify nahi hua
       const otp = generateOtp();
 
-      const otpExpire = new Date(Date.now() + 10 * 60 * 1000);
+      const otpExpire = new Date(
+        Date.now() + 10 * 60 * 1000
+      );
 
-      const hashedPassword = await bcrypt.hash(password, 10);
+      const hashedPassword = await bcrypt.hash(
+        password,
+        10
+      );
 
       existingUser.fullName = fullName;
       existingUser.password = hashedPassword;
@@ -76,8 +85,10 @@ export const register = async (req, res) => {
 
       await existingUser.save();
 
-      // New OTP send
-      const sent = await sendOtp(existingUser.email, otp);
+      const sent = await sendOtp(
+        existingUser.email,
+        otp
+      );
 
       if (!sent) {
         return res.status(500).json({
@@ -88,17 +99,23 @@ export const register = async (req, res) => {
 
       return res.status(200).json({
         success: true,
-        message: "Account already exists but is not verified. New OTP sent.",
+        message:
+          "Account already exists but is not verified. New OTP sent.",
         userId: existingUser._id,
         email: existingUser.email,
       });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(
+      password,
+      10
+    );
 
     const otp = generateOtp();
 
-    const otpExpire = new Date(Date.now() + 10 * 60 * 1000);
+    const otpExpire = new Date(
+      Date.now() + 10 * 60 * 1000
+    );
 
     const user = await User.create({
       fullName,
@@ -110,7 +127,6 @@ export const register = async (req, res) => {
       otpExpire,
     });
 
-    // Send OTP through Brevo
     const sent = await sendOtp(user.email, otp);
 
     if (!sent) {
@@ -124,7 +140,8 @@ export const register = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: "Registration successful. Please verify OTP",
+      message:
+        "Registration successful. Please verify OTP",
       userId: user._id,
       email: user.email,
     });
@@ -138,7 +155,8 @@ export const register = async (req, res) => {
   }
 };
 
-// VERIFY OTP
+// ================= VERIFY REGISTER OTP =================
+
 export const verifyOtp = async (req, res) => {
   try {
     const { email, otp } = req.body;
@@ -171,7 +189,8 @@ export const verifyOtp = async (req, res) => {
     if (!user.otp || !user.otpExpire) {
       return res.status(400).json({
         success: false,
-        message: "OTP not found. Please request another OTP",
+        message:
+          "OTP not found. Please request another OTP",
       });
     }
 
@@ -218,7 +237,8 @@ export const verifyOtp = async (req, res) => {
   }
 };
 
-// RESEND OTP
+// ================= RESEND REGISTER OTP =================
+
 export const resendOtp = async (req, res) => {
   try {
     const { email } = req.body;
@@ -251,7 +271,9 @@ export const resendOtp = async (req, res) => {
     const otp = generateOtp();
 
     user.otp = otp;
-    user.otpExpire = new Date(Date.now() + 10 * 60 * 1000);
+    user.otpExpire = new Date(
+      Date.now() + 10 * 60 * 1000
+    );
 
     await user.save();
 
@@ -278,7 +300,8 @@ export const resendOtp = async (req, res) => {
   }
 };
 
-// LOGIN
+// ================= LOGIN =================
+
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -286,7 +309,8 @@ export const login = async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({
         success: false,
-        message: "Email and password are required",
+        message:
+          "Email and password are required",
       });
     }
 
@@ -295,7 +319,8 @@ export const login = async (req, res) => {
     // ADMIN LOGIN
     if (
       process.env.ADMIN_EMAIL &&
-      loginEmail === process.env.ADMIN_EMAIL.toLowerCase() &&
+      loginEmail ===
+        process.env.ADMIN_EMAIL.toLowerCase() &&
       password === process.env.ADMIN_PASSWORD
     ) {
       const token = generateToken({
@@ -343,7 +368,10 @@ export const login = async (req, res) => {
       });
     }
 
-    const passwordMatch = await bcrypt.compare(password, user.password);
+    const passwordMatch = await bcrypt.compare(
+      password,
+      user.password
+    );
 
     if (!passwordMatch) {
       return res.status(401).json({
@@ -375,7 +403,8 @@ export const login = async (req, res) => {
   }
 };
 
-// FORGOT PASSWORD
+// ================= FORGOT PASSWORD =================
+
 export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
@@ -401,11 +430,16 @@ export const forgotPassword = async (req, res) => {
     const otp = generateOtp();
 
     user.otp = otp;
-    user.otpExpire = new Date(Date.now() + 10 * 60 * 1000);
+    user.otpExpire = new Date(
+      Date.now() + 10 * 60 * 1000
+    );
 
     await user.save();
 
-    const sent = await sendOtp(user.email, otp);
+    const sent = await sendOtp(
+      user.email,
+      otp
+    );
 
     if (!sent) {
       return res.status(500).json({
@@ -419,7 +453,10 @@ export const forgotPassword = async (req, res) => {
       message: "Password reset OTP sent",
     });
   } catch (error) {
-    console.error("Forgot password error:", error);
+    console.error(
+      "Forgot password error:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
@@ -428,22 +465,16 @@ export const forgotPassword = async (req, res) => {
   }
 };
 
-// RESET PASSWORD
-export const resetPassword = async (req, res) => {
+// ================= VERIFY FORGOT PASSWORD OTP =================
+
+export const verifyForgotOtp = async (req, res) => {
   try {
-    const { email, otp, newPassword } = req.body;
+    const { email, otp } = req.body;
 
-    if (!email || !otp || !newPassword) {
+    if (!email || !otp) {
       return res.status(400).json({
         success: false,
-        message: "Email, OTP and new password are required",
-      });
-    }
-
-    if (newPassword.length < 6) {
-      return res.status(400).json({
-        success: false,
-        message: "Password must be at least 6 characters",
+        message: "Email and OTP are required",
       });
     }
 
@@ -461,7 +492,8 @@ export const resetPassword = async (req, res) => {
     if (!user.otp || !user.otpExpire) {
       return res.status(400).json({
         success: false,
-        message: "OTP not found. Please request another OTP",
+        message:
+          "OTP not found. Please request another OTP",
       });
     }
 
@@ -479,7 +511,86 @@ export const resetPassword = async (req, res) => {
       });
     }
 
-    user.password = await bcrypt.hash(newPassword, 10);
+    return res.status(200).json({
+      success: true,
+      message: "OTP verified successfully",
+    });
+  } catch (error) {
+    console.error(
+      "Verify forgot OTP error:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
+// ================= RESET PASSWORD =================
+
+export const resetPassword = async (req, res) => {
+  try {
+    const {
+      email,
+      otp,
+      newPassword,
+    } = req.body;
+
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Email, OTP and new password are required",
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Password must be at least 6 characters",
+      });
+    }
+
+    const user = await User.findOne({
+      email: email.toLowerCase(),
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    if (!user.otp || !user.otpExpire) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "OTP not found. Please request another OTP",
+      });
+    }
+
+    if (user.otpExpire < new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP has expired",
+      });
+    }
+
+    if (user.otp !== otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid OTP",
+      });
+    }
+
+    user.password = await bcrypt.hash(
+      newPassword,
+      10
+    );
 
     user.otp = null;
     user.otpExpire = null;
@@ -491,7 +602,10 @@ export const resetPassword = async (req, res) => {
       message: "Password reset successfully",
     });
   } catch (error) {
-    console.error("Reset password error:", error);
+    console.error(
+      "Reset password error:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
